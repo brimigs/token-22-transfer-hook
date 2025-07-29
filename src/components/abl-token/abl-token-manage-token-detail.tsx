@@ -202,6 +202,13 @@ export default function ManageTokenDetail() {
   const tokenAddress = params?.address as string
   const tokenQuery = useGetToken(new PublicKey(tokenAddress));
 
+  // Save token address to localStorage when accessed
+  React.useEffect(() => {
+    if (tokenAddress && typeof window !== 'undefined') {
+      localStorage.setItem('lastTokenAddress', tokenAddress);
+    }
+  }, [tokenAddress]);
+
   const tokenInfo = React.useMemo(() => {
     if (!tokenQuery?.data || !tokenAddress) return null;
     return {

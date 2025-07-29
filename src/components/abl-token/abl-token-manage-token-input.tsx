@@ -9,11 +9,19 @@ import { Button } from '@/components/ui/button'
 
 export default function ManageTokenInput() {
   const { publicKey } = useWallet()
-  const [tokenAddress, setTokenAddress] = React.useState('')
+  const [tokenAddress, setTokenAddress] = React.useState(() => {
+    // Load saved token address from localStorage on component mount
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastTokenAddress') || ''
+    }
+    return ''
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (tokenAddress) {
+      // Save token address to localStorage before navigating
+      localStorage.setItem('lastTokenAddress', tokenAddress)
       redirect(`/manage-token/${tokenAddress.toString()}`)
     }
   }

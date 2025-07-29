@@ -230,7 +230,10 @@ export function useAblTokenProgram() {
     onSuccess: (signature) => {
       transactionToast(signature)
     },
-    onError: () => toast.error('Failed to run program'),
+    onError: (error: any) => {
+      console.error('Failed to process batch wallets:', error);
+      toast.error(`Failed to run program: ${error?.message || 'Unknown error'}`);
+    },
   })
   
 
