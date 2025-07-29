@@ -14,7 +14,7 @@ export default function AblTokenFeature() {
 
   return publicKey ? (
     <div>
-      <AppHero title="ABL Token" subtitle={'Run the program by clicking the "Run program" button.'}>
+      <AppHero title="Create New Token" subtitle={'Fill out all below fields to meet needed compliance obligations.'}>
         <p className="mb-6">
           <ExplorerLink path={`account/${programId}`} label={ellipsify(programId.toString())} />
         </p>

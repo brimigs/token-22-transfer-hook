@@ -24,7 +24,7 @@ export default function AblTokenConfig() {
 
   return publicKey ? (
     <div>
-      <AppHero title="ABL Token Config" subtitle={''}>
+      <AppHero title="Manage Token's Allowlist" subtitle={''}>
         <p className="mb-6">
           <ExplorerLink path={`account/${programId}`} label={ellipsify(programId.toString())} />
         </p>
@@ -94,7 +94,7 @@ export function AblTokenConfigCreate() {
 export function AblTokenConfigList({ abWallets }: { abWallets: {publicKey: PublicKey, account: {wallet: PublicKey, allowed: boolean}}[] | undefined }) {
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">ABL Token Config List</h2>
+      <h2 className="text-2xl font-bold">Current Config:</h2>
       {abWallets && abWallets.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="table w-full">

@@ -11,10 +11,8 @@ export const metadata: Metadata = {
 
 const links: { label: string; path: string }[] = [
   // More links...
-  { label: 'Home', path: '/' },
-  { label: 'Account', path: '/account' },
-  { label: 'Config', path: '/config' },
   { label: 'Create New Token', path: '/create-token' },
+  { label: 'Manage Allowlist', path: '/config' },
   { label: 'Manage Token', path: '/manage-token' },
 ]
 
