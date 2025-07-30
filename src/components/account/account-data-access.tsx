@@ -8,6 +8,7 @@ import {
   PublicKey,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
   TransactionMessage,
   TransactionSignature,
   VersionedTransaction,
@@ -47,9 +48,10 @@ export function useSendTokens() {
       mint: PublicKey,
       destination: PublicKey,
       amount: number,
+      memo?: string,
     }) => {
       if (!publicKey) throw new Error('No public key found');
-      const { mint, destination, amount } = args;
+      const { mint, destination, amount, memo } = args;
       const mintInfo = await getMint(connection, mint, 'confirmed', TOKEN_2022_PROGRAM_ID);
       const ataDestination = getAssociatedTokenAddressSync(mint, destination, true, TOKEN_2022_PROGRAM_ID);
       const ataSource = getAssociatedTokenAddressSync(mint, publicKey, true, TOKEN_2022_PROGRAM_ID);
@@ -74,6 +76,19 @@ export function useSendTokens() {
       if (!validateStateAccount) throw new Error('validate-state-account not found');
 
       const transaction = new Transaction();
+      
+      // Add memo instruction if provided
+      if (memo) {
+        // Create a simple memo instruction
+        // The memo program expects the memo as the instruction data
+        const memoInstruction = new TransactionInstruction({
+          keys: [],
+          programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'),
+          data: Buffer.from(memo, 'utf-8'),
+        });
+        transaction.add(memoInstruction);
+      }
+      
       transaction.add(ix, ix3);
       transaction.feePayer = provider.wallet.publicKey;
       transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;

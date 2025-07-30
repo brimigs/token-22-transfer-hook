@@ -8,7 +8,11 @@ import { useAblTokenProgram, useGetToken } from './abl-token-data-access'
 import { PublicKey } from '@solana/web3.js'
 import { BN } from '@coral-xyz/anchor'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useSendTokens } from '../account/account-data-access'
+import { AlertCircle, Upload, Send, Coins, Settings, Wallet, Flame } from 'lucide-react'
 
 interface TokenInfo {
   address: string;
@@ -30,50 +34,115 @@ interface TokenInfo {
 function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
   const { attachToExistingToken } = useAblTokenProgram()
   const tokenInfo = useGetToken(new PublicKey(tokenAddress));
+  
   return (
-    <div className="bg-base-200 p-6 rounded-lg">
-      <h2 className="text-2xl font-bold mb-4">Token Information</h2>
-      {tokenInfo ? (
-        <div className="grid grid-cols-2 gap-4">
-          <div>Address: {tokenAddress}</div>
-          <div>Name: {tokenInfo.data?.name}</div>
-          <div>Symbol: {tokenInfo.data?.symbol}</div>
-          <div>Decimals: {tokenInfo.data?.decimals}</div>
-          <div>URI: {tokenInfo.data?.uri}</div>
-          <div>Supply: {tokenInfo.data?.supply}</div>
-          <div>Mint Authority: {tokenInfo.data?.mintAuthority?.toString()}</div>
-          <div>Freeze Authority: {tokenInfo.data?.freezeAuthority?.toString()}</div>
-          <div>Permanent Delegate: {tokenInfo.data?.permanentDelegate?.toString()}</div>
-          <br/>
-          <div>
-            <h3 className="text-xl font-bold mb-2">ABL Token</h3>
-            <div>Mode: {tokenInfo.data?.mode}</div>
-            <div>Threshold: {tokenInfo.data?.threshold?.toString()}</div>
-            {tokenInfo.data?.isTransferHookEnabled ? (tokenInfo.data?.isTransferHookSet ? (
-              <div>TxHook: Enabled and Set ✅</div>
-            ) : (
-              <div>TxHook: Enabled. <Button onClick={() => attachToExistingToken.mutateAsync({ mint: new PublicKey(tokenAddress) }).then()}>Set</Button></div>
-            )) : (
-              <div>TxHook: Not enabled ❌</div>
-            )}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Wallet className="h-5 w-5" />
+          Token Information
+        </CardTitle>
+        <CardDescription>Details about your token and its configuration</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {tokenInfo ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-muted-foreground text-sm">Token Address</Label>
+                  <p className="font-mono text-sm break-all">{tokenAddress}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">Name</Label>
+                  <p className="font-medium">{tokenInfo.data?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">Symbol</Label>
+                  <p className="font-medium">{tokenInfo.data?.symbol || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">Decimals</Label>
+                  <p className="font-medium">{tokenInfo.data?.decimals}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-muted-foreground text-sm">Supply</Label>
+                  <p className="font-medium">{tokenInfo.data?.supply?.toString() || '0'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">Mint Authority</Label>
+                  <p className="font-mono text-xs break-all">{tokenInfo.data?.mintAuthority?.toString() || 'None'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">Freeze Authority</Label>
+                  <p className="font-mono text-xs break-all">{tokenInfo.data?.freezeAuthority?.toString() || 'None'}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                ABL Token Configuration
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-sm">Mode</Label>
+                  <p className="font-medium">{tokenInfo.data?.mode || 'Not configured'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-sm">Threshold</Label>
+                  <p className="font-medium">{tokenInfo.data?.threshold?.toString() || 'N/A'}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-muted-foreground text-sm">Transfer Hook Status</Label>
+                  {tokenInfo.data?.isTransferHookEnabled ? (
+                    tokenInfo.data?.isTransferHookSet ? (
+                      <p className="text-green-600 font-medium mt-1">✓ Enabled and Set</p>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-yellow-600 font-medium">Enabled but not set</p>
+                        <Button 
+                          size="sm" 
+                          onClick={() => attachToExistingToken.mutateAsync({ mint: new PublicKey(tokenAddress) }).then()}
+                        >
+                          Set Hook
+                        </Button>
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-muted-foreground font-medium mt-1">Not enabled</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      ) : (
-        <p>No token information available.</p>
-      )}
-    </div>
+        ) : (
+          <p className="text-muted-foreground">Loading token information...</p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
 function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
   const { publicKey } = useWallet()
-  const { changeMode, mintTo } = useAblTokenProgram()
+  const { changeMode, mintTo, burnTokens } = useAblTokenProgram()
   const sendTokens = useSendTokens()
   const [mode, setMode] = React.useState<'Allow' | 'Block' | 'Mixed'>(tokenInfo.mode as 'Allow' | 'Block' | 'Mixed')
   const [threshold, setThreshold] = React.useState<string | undefined>(tokenInfo.threshold ?? undefined)
   const [destinationWallet, setDestinationWallet] = React.useState('')
   const [sendRecipient, setSendRecipient] = React.useState('')
   const [sendAmount, setSendAmount] = React.useState('')
+  const [sendMemo, setSendMemo] = React.useState('')
+  const [bulkRecipients, setBulkRecipients] = React.useState<string[]>([])
+  const [bulkAmount, setBulkAmount] = React.useState('')
+  const [isSending, setIsSending] = React.useState(false)
+  const [sendProgress, setSendProgress] = React.useState({ current: 0, total: 0 })
+  const [burnWallet, setBurnWallet] = React.useState('')
 
   const handleApplyChanges = async () => {
     if (!publicKey || !tokenInfo) return;
@@ -115,137 +184,405 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
         mint: new PublicKey(tokenInfo.address),
         destination: new PublicKey(sendRecipient),
         amount: amount,
+        memo: sendMemo || undefined,
       });
       console.log('Tokens sent successfully');
       setSendRecipient('');
       setSendAmount('');
+      setSendMemo('');
     } catch (err) {
       console.error('Failed to send tokens:', err);
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      const validWallets: string[] = [];
+      for (const line of lines) {
+        const wallet = line.trim();
+        try {
+          new PublicKey(wallet);
+          validWallets.push(wallet);
+        } catch {
+          console.warn(`Invalid wallet address: ${wallet}`);
+        }
+      }
+      
+      setBulkRecipients(validWallets);
+      console.log(`Loaded ${validWallets.length} valid wallet addresses`);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleBulkSend = async () => {
+    if (!publicKey || !tokenInfo || bulkRecipients.length === 0 || !bulkAmount) return;
+
+    setIsSending(true);
+    setSendProgress({ current: 0, total: bulkRecipients.length });
+
+    const amount = parseFloat(bulkAmount) * Math.pow(10, tokenInfo.decimals);
+    let successCount = 0;
+
+    for (let i = 0; i < bulkRecipients.length; i++) {
+      try {
+        await sendTokens.mutateAsync({
+          mint: new PublicKey(tokenInfo.address),
+          destination: new PublicKey(bulkRecipients[i]),
+          amount: amount,
+        });
+        successCount++;
+        setSendProgress({ current: i + 1, total: bulkRecipients.length });
+      } catch (err) {
+        console.error(`Failed to send to ${bulkRecipients[i]}:`, err);
+      }
+    }
+
+    console.log(`Successfully sent tokens to ${successCount} out of ${bulkRecipients.length} wallets`);
+    setIsSending(false);
+    setBulkRecipients([]);
+    setBulkAmount('');
+    setSendProgress({ current: 0, total: 0 });
+  };
+
+  const handleBurnTokens = async () => {
+    if (!publicKey || !tokenInfo || !burnWallet) return;
+
+    try {
+      // Burn exactly 10 tokens
+      const burnAmount = 10 * Math.pow(10, tokenInfo.decimals);
+      await burnTokens.mutateAsync({
+        mint: new PublicKey(tokenInfo.address),
+        owner: new PublicKey(burnWallet),
+        amount: new BN(burnAmount),
+      });
+      console.log('Successfully burned 10 tokens');
+      setBurnWallet('');
+    } catch (err) {
+      console.error('Failed to burn tokens:', err);
+    }
+  };
+
   return (
-    <div className="bg-base-200 p-6 rounded-lg">
-      <h2 className="text-2xl font-bold mb-4">Token Management</h2>
-      <div className="space-y-4">
-        <div>
-          {tokenInfo.isTransferHookSet && (
-            <div>
-              <label className="block mb-2">Mode</label>
-              <div className="flex gap-4">
-                <label>
-                  <input
-                    type="radio"
-                    checked={mode === 'Allow'}
-                    onChange={() => {setMode('Allow'); setThreshold(tokenInfo.threshold ?? undefined);}}
-                    name="mode"
-                  /> Allow
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    checked={mode === 'Block'}
-                    onChange={() => {setMode('Block'); setThreshold(tokenInfo.threshold ?? undefined);}}
-                    name="mode"
-                  /> Block
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    checked={mode === 'Mixed'}
-                    onChange={() => setMode('Mixed')}
-                    name="mode"
-                  /> Mixed
-                </label>
-              </div>
-
-              {mode === 'Mixed' && (
-              <div>
-                <label className="block mb-2">Threshold Amount</label>
-                <input
-                  type="number"
-                  className="w-full p-2 border rounded"
-                  value={threshold}
-                  onChange={e => setThreshold(e.target.value)}
-                  min="0"
-                />
-              </div>
-              )}
-
-              <div className="mt-4">
-                <Button 
-                  onClick={handleApplyChanges}
-                  disabled={mode === tokenInfo.mode && (threshold === tokenInfo.threshold || (threshold === undefined && tokenInfo.threshold === null))}
-                >
-                  Apply Changes
-                </Button>
-              </div>
-              
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8">
-          <h3 className="text-xl font-bold mb-2">Mint New Tokens</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block mb-2">Destination Wallet</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={destinationWallet}
-                onChange={e => setDestinationWallet(e.target.value)}
-                placeholder="Enter destination wallet address"
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <input
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5" />
+            Mint Tokens
+          </CardTitle>
+          <CardDescription>Create new tokens and add them to circulation</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="mint-destination">Destination Wallet</Label>
+            <Input
+              id="mint-destination"
+              type="text"
+              value={destinationWallet}
+              onChange={e => setDestinationWallet(e.target.value)}
+              placeholder="Enter destination wallet address"
+              className="mt-2"
+            />
+          </div>
+          <div>
+            <Label htmlFor="mint-amount">Amount to Mint</Label>
+            <div className="flex gap-3 mt-2">
+              <Input
+                id="mint-amount"
                 type="number"
-                className="w-full p-2 border rounded"
                 value={mintAmount}
                 onChange={e => setMintAmount(e.target.value)}
                 min="0"
-                placeholder="Amount to mint"
+                placeholder="0.00"
               />
-              <Button onClick={handleMint}>
+              <Button onClick={handleMint} className="shrink-0">
+                <Coins className="h-4 w-4 mr-2" />
                 Mint Tokens
               </Button>
             </div>
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="mt-8">
-          <h3 className="text-xl font-bold mb-2">Send Tokens</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block mb-2">Recipient Wallet</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={sendRecipient}
-                onChange={e => setSendRecipient(e.target.value)}
-                placeholder="Enter recipient wallet address"
-              />
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5" />
+            Send Tokens
+          </CardTitle>
+          <CardDescription>Transfer tokens to other wallets</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            <div className="space-y-4 pb-6 border-b">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <Wallet className="h-4 w-4" />
+                Single Transfer
+              </h4>
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="send-recipient">Recipient Wallet</Label>
+                  <Input
+                    id="send-recipient"
+                    type="text"
+                    value={sendRecipient}
+                    onChange={e => setSendRecipient(e.target.value)}
+                    placeholder="Enter recipient wallet address"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="send-memo">Memo (Optional)</Label>
+                  <Input
+                    id="send-memo"
+                    type="text"
+                    value={sendMemo}
+                    onChange={e => setSendMemo(e.target.value)}
+                    placeholder="Add a memo to this transaction"
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This memo will be recorded on the blockchain with your transaction
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="send-amount">Amount</Label>
+                  <div className="flex gap-3 mt-2">
+                    <Input
+                      id="send-amount"
+                      type="number"
+                      value={sendAmount}
+                      onChange={e => setSendAmount(e.target.value)}
+                      min="0"
+                      placeholder="0.00"
+                    />
+                    <Button 
+                      onClick={handleSendTokens}
+                      disabled={!sendRecipient || !sendAmount || parseFloat(sendAmount) <= 0}
+                      className="shrink-0"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={sendAmount}
-                onChange={e => setSendAmount(e.target.value)}
-                min="0"
-                placeholder="Amount to send"
-              />
-              <Button 
-                onClick={handleSendTokens}
-                disabled={!sendRecipient || !sendAmount || parseFloat(sendAmount) <= 0}
-              >
-                Send Tokens
-              </Button>
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Bulk Transfer
+              </h4>
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="csv-upload">Upload Wallet List</Label>
+                  <div className="mt-2">
+                    <Input
+                      id="csv-upload"
+                      type="file"
+                      accept=".csv,.txt"
+                      onChange={handleFileUpload}
+                      className="cursor-pointer"
+                    />
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Upload a CSV or TXT file with one wallet address per line
+                    </p>
+                    {bulkRecipients.length > 0 && (
+                      <div className="flex items-center gap-2 mt-3">
+                        <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                        <p className="text-sm text-green-600">
+                          {bulkRecipients.length} valid wallet{bulkRecipients.length !== 1 ? 's' : ''} loaded
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="bulk-amount">Amount per Wallet</Label>
+                  <div className="flex gap-3 mt-2">
+                    <Input
+                      id="bulk-amount"
+                      type="number"
+                      value={bulkAmount}
+                      onChange={e => setBulkAmount(e.target.value)}
+                      min="0"
+                      placeholder="0.00"
+                    />
+                    <Button 
+                      onClick={handleBulkSend}
+                      disabled={bulkRecipients.length === 0 || !bulkAmount || parseFloat(bulkAmount) <= 0 || isSending}
+                      className="shrink-0"
+                    >
+                      {isSending ? (
+                        <>
+                          <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Send to {bulkRecipients.length} Wallets
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                
+                {isSending && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-medium">{sendProgress.current} / {sendProgress.total}</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                      <div 
+                        className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
+                        style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Flame className="h-5 w-5" />
+            Burn Tokens
+          </CardTitle>
+          <CardDescription>Permanently remove tokens from circulation</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive font-medium mb-1">⚠️ Warning</p>
+              <p className="text-sm text-muted-foreground">
+                This action will permanently burn tokens from the specified wallet. This action cannot be undone.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="burn-wallet">Wallet Address</Label>
+              <Input
+                id="burn-wallet"
+                type="text"
+                value={burnWallet}
+                onChange={e => setBurnWallet(e.target.value)}
+                placeholder="Enter wallet address to burn from"
+                className="mt-2"
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                Enter the wallet address from which tokens will be burned
+              </p>
+            </div>
+            <Button 
+              onClick={handleBurnTokens}
+              disabled={!burnWallet}
+              variant="destructive"
+              className="w-full"
+            >
+              <Flame className="h-4 w-4 mr-2" />
+              Burn Tokens
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {tokenInfo.isTransferHookSet && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Transfer Settings
+            </CardTitle>
+            <CardDescription>Configure how transfers are handled for this token</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <Label className="text-base font-medium mb-3 block">Transfer Mode</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <label className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === 'Allow' ? 'border-primary bg-primary/5' : 'border-muted'}`}>
+                  <input
+                    type="radio"
+                    className="sr-only"
+                    checked={mode === 'Allow'}
+                    onChange={() => {setMode('Allow'); setThreshold(tokenInfo.threshold ?? undefined);}}
+                    name="mode"
+                  />
+                  <div className="text-center">
+                    <p className="font-medium">Allow</p>
+                    <p className="text-xs text-muted-foreground mt-1">All transfers allowed</p>
+                  </div>
+                </label>
+                <label className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === 'Block' ? 'border-primary bg-primary/5' : 'border-muted'}`}>
+                  <input
+                    type="radio"
+                    className="sr-only"
+                    checked={mode === 'Block'}
+                    onChange={() => {setMode('Block'); setThreshold(tokenInfo.threshold ?? undefined);}}
+                    name="mode"
+                  />
+                  <div className="text-center">
+                    <p className="font-medium">Block</p>
+                    <p className="text-xs text-muted-foreground mt-1">All transfers blocked</p>
+                  </div>
+                </label>
+                <label className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === 'Mixed' ? 'border-primary bg-primary/5' : 'border-muted'}`}>
+                  <input
+                    type="radio"
+                    className="sr-only"
+                    checked={mode === 'Mixed'}
+                    onChange={() => setMode('Mixed')}
+                    name="mode"
+                  />
+                  <div className="text-center">
+                    <p className="font-medium">Mixed</p>
+                    <p className="text-xs text-muted-foreground mt-1">Threshold-based</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {mode === 'Mixed' && (
+              <div>
+                <Label htmlFor="threshold">Threshold Amount</Label>
+                <Input
+                  id="threshold"
+                  type="number"
+                  value={threshold}
+                  onChange={e => setThreshold(e.target.value)}
+                  min="0"
+                  placeholder="Enter threshold amount"
+                  className="mt-2"
+                />
+                <p className="text-sm text-muted-foreground mt-2">
+                  Transfers above this amount will be handled differently
+                </p>
+              </div>
+            )}
+
+            <Button 
+              onClick={handleApplyChanges}
+              disabled={mode === tokenInfo.mode && (threshold === tokenInfo.threshold || (threshold === undefined && tokenInfo.threshold === null))}
+              className="w-full"
+            >
+              Apply Changes
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
@@ -283,17 +620,40 @@ export default function ManageTokenDetail() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="container max-w-6xl mx-auto py-8 px-4">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Token Management</h1>
+        <p className="text-muted-foreground">
+          Manage your token settings, mint new tokens, and send tokens to wallets
+        </p>
+      </div>
+      
       {tokenQuery?.isLoading ? (
-        <p>Loading token information...</p>
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center space-y-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+              <p className="text-muted-foreground">Loading token information...</p>
+            </div>
+          </CardContent>
+        </Card>
       ) : tokenQuery?.isError ? (
-        <p>Error loading token information. Please check the token address.</p>
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center space-y-3">
+              <AlertCircle className="h-12 w-12 text-destructive mx-auto" />
+              <p className="text-lg font-medium">Error loading token</p>
+              <p className="text-muted-foreground">
+                Please check the token address and try again
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <>
-          <TokenInfo tokenAddress={tokenAddress} />
+        <div className="grid gap-6">
           {tokenInfo && <TokenManagement tokenInfo={tokenInfo}/>}
-          
-        </>
+          <TokenInfo tokenAddress={tokenAddress} />
+        </div>
       )}
     </div>
   )

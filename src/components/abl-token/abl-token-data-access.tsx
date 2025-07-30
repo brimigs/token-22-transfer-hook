@@ -10,7 +10,7 @@ import { useAnchorProvider } from '../solana/solana-provider'
 import { useTransactionToast } from '../use-transaction-toast'
 import { toast } from 'sonner'
 import { BN } from '@coral-xyz/anchor'
-import { createAssociatedTokenAccountIdempotentInstruction, createMintToCheckedInstruction, getAssociatedTokenAddressSync, getMint, getPermanentDelegate, getTokenMetadata, getTransferHook, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
+import { createAssociatedTokenAccountIdempotentInstruction, createMintToCheckedInstruction, createBurnCheckedInstruction, getAssociatedTokenAddressSync, getMint, getPermanentDelegate, getTokenMetadata, getTransferHook, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
 
 export function useHasTransferHookEnabled(mint: PublicKey) {
   const { connection } = useConnection()
@@ -325,6 +325,44 @@ export function useAblTokenProgram() {
     onError: () => toast.error('Failed to run program'),
   })
 
+  const burnTokens = useMutation({
+    mutationKey: ['abl-token', 'burn-tokens', { cluster }],
+    mutationFn: async (args: {
+      mint: PublicKey,
+      amount: BN,
+      owner: PublicKey,
+    }) => {
+      const mintInfo = await getMint(
+        connection,
+        args.mint,
+        "confirmed",
+        TOKEN_2022_PROGRAM_ID,
+      );
+      const ata = getAssociatedTokenAddressSync(args.mint, args.owner, true, TOKEN_2022_PROGRAM_ID);
+      
+      const ix = createBurnCheckedInstruction(
+        ata,
+        args.mint,
+        args.owner,
+        args.amount.toNumber(),
+        mintInfo.decimals,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+      
+      const tx = new Transaction();
+      tx.add(ix);
+      tx.feePayer = provider.wallet.publicKey;
+      tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const signedTx = await provider.wallet.signTransaction(tx);
+      return connection.sendRawTransaction(signedTx.serialize())
+    },
+    onSuccess: (signature) => {
+      transactionToast(signature)
+    },
+    onError: () => toast.error('Failed to burn tokens'),
+  })
+
 
   return {
     program,
@@ -339,6 +377,7 @@ export function useAblTokenProgram() {
     getAbWallets,
     processBatchWallets,
     mintTo,
+    burnTokens,
     attachToExistingToken,
   }
 }
