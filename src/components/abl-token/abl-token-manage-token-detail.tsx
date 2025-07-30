@@ -8,6 +8,7 @@ import { useAblTokenProgram, useGetToken } from './abl-token-data-access'
 import { PublicKey } from '@solana/web3.js'
 import { BN } from '@coral-xyz/anchor'
 import { Button } from '@/components/ui/button'
+import { useSendTokens } from '../account/account-data-access'
 
 interface TokenInfo {
   address: string;
@@ -67,9 +68,12 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
 function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
   const { publicKey } = useWallet()
   const { changeMode, mintTo } = useAblTokenProgram()
+  const sendTokens = useSendTokens()
   const [mode, setMode] = React.useState<'Allow' | 'Block' | 'Mixed'>(tokenInfo.mode as 'Allow' | 'Block' | 'Mixed')
   const [threshold, setThreshold] = React.useState<string | undefined>(tokenInfo.threshold ?? undefined)
   const [destinationWallet, setDestinationWallet] = React.useState('')
+  const [sendRecipient, setSendRecipient] = React.useState('')
+  const [sendAmount, setSendAmount] = React.useState('')
 
   const handleApplyChanges = async () => {
     if (!publicKey || !tokenInfo) return;
@@ -99,6 +103,24 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
       console.log('Minted successfully');
     } catch (err) {
       console.error('Failed to mint tokens:', err);
+    }
+  };
+
+  const handleSendTokens = async () => {
+    if (!publicKey || !tokenInfo || !sendRecipient || !sendAmount) return;
+
+    try {
+      const amount = parseFloat(sendAmount) * Math.pow(10, tokenInfo.decimals);
+      await sendTokens.mutateAsync({
+        mint: new PublicKey(tokenInfo.address),
+        destination: new PublicKey(sendRecipient),
+        amount: amount,
+      });
+      console.log('Tokens sent successfully');
+      setSendRecipient('');
+      setSendAmount('');
+    } catch (err) {
+      console.error('Failed to send tokens:', err);
     }
   };
 
@@ -187,6 +209,38 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
               />
               <Button onClick={handleMint}>
                 Mint Tokens
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <h3 className="text-xl font-bold mb-2">Send Tokens</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block mb-2">Recipient Wallet</label>
+              <input
+                type="text"
+                className="w-full p-2 border rounded"
+                value={sendRecipient}
+                onChange={e => setSendRecipient(e.target.value)}
+                placeholder="Enter recipient wallet address"
+              />
+            </div>
+            <div className="flex items-center gap-4">
+              <input
+                type="number"
+                className="w-full p-2 border rounded"
+                value={sendAmount}
+                onChange={e => setSendAmount(e.target.value)}
+                min="0"
+                placeholder="Amount to send"
+              />
+              <Button 
+                onClick={handleSendTokens}
+                disabled={!sendRecipient || !sendAmount || parseFloat(sendAmount) <= 0}
+              >
+                Send Tokens
               </Button>
             </div>
           </div>
