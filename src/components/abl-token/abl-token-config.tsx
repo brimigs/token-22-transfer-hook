@@ -15,12 +15,11 @@ export default function AblTokenConfig() {
   const { programId, getConfig, getAbWallets } = useAblTokenProgram()
 
   const config = getConfig.data;
-  let abWallets = getAbWallets.data;
+  const abWallets = getAbWallets.data;
 
   const handleWalletListUpdate = React.useCallback(async () => {
     await getAbWallets.refetch();
-    abWallets = getAbWallets.data;
-  }, [])
+  }, [getAbWallets])
 
   return publicKey ? (
     <div>
