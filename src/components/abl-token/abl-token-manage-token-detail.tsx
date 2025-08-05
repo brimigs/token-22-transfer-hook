@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useSendTokens } from "../account/account-data-access";
+import { useSendTokens, useBulkSendTokens } from "../account/account-data-access";
 import {
   AlertCircle,
   Upload,
@@ -192,6 +192,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
   const { publicKey } = useWallet();
   const { changeMode, mintTo, burnTokens } = useAblTokenProgram();
   const sendTokens = useSendTokens();
+  const bulkSendTokens = useBulkSendTokens();
   const [mode, setMode] = React.useState<"Allow" | "Block" | "Mixed">(
     tokenInfo.mode as "Allow" | "Block" | "Mixed"
   );
@@ -210,6 +211,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
     total: 0,
   });
   const [burnWallet, setBurnWallet] = React.useState("");
+  const [burnAmount, setBurnAmount] = React.useState("");
 
   const handleApplyChanges = async () => {
     if (!publicKey || !tokenInfo) return;
@@ -298,25 +300,28 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
     setSendProgress({ current: 0, total: bulkRecipients.length });
 
     const amount = parseFloat(bulkAmount) * Math.pow(10, tokenInfo.decimals);
-    let successCount = 0;
+    
+    try {
+      // Prepare recipients array for bulk transfer
+      const recipients = bulkRecipients.map(wallet => ({
+        destination: new PublicKey(wallet),
+        amount: amount,
+      }));
 
-    for (let i = 0; i < bulkRecipients.length; i++) {
-      try {
-        await sendTokens.mutateAsync({
-          mint: new PublicKey(tokenInfo.address),
-          destination: new PublicKey(bulkRecipients[i]),
-          amount: amount,
-        });
-        successCount++;
-        setSendProgress({ current: i + 1, total: bulkRecipients.length });
-      } catch (err) {
-        console.error(`Failed to send to ${bulkRecipients[i]}:`, err);
-      }
+      // Send all transfers in a single transaction
+      await bulkSendTokens.mutateAsync({
+        mint: new PublicKey(tokenInfo.address),
+        recipients: recipients,
+      });
+
+      console.log(
+        `Successfully sent tokens to all ${bulkRecipients.length} wallets in a single transaction`
+      );
+      setSendProgress({ current: bulkRecipients.length, total: bulkRecipients.length });
+    } catch (err) {
+      console.error('Failed to send bulk transfers:', err);
     }
 
-    console.log(
-      `Successfully sent tokens to ${successCount} out of ${bulkRecipients.length} wallets`
-    );
     setIsSending(false);
     setBulkRecipients([]);
     setBulkAmount("");
@@ -324,11 +329,11 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
   };
 
   const handleBurnTokens = async () => {
-    if (!publicKey || !tokenInfo || !burnWallet) return;
+    if (!publicKey || !tokenInfo || !burnWallet || !burnAmount) return;
 
     try {
-      // Burn exactly 10 tokens
-      const burnAmount = 1 * Math.pow(10, tokenInfo.decimals);
+      // Burn the user-specified amount of tokens
+      const burnAmountParsed = parseFloat(burnAmount) * Math.pow(10, tokenInfo.decimals);
       const ata = getAssociatedTokenAddressSync(
         new PublicKey(tokenInfo.address),
         new PublicKey(burnWallet),
@@ -339,11 +344,12 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
       await burnTokens.mutateAsync({
         mint: new PublicKey(tokenInfo.address),
         owner: new PublicKey(publicKey),
-        amount: new BN(burnAmount),
+        amount: new BN(burnAmountParsed),
         ata,
       });
-      console.log("Successfully burned 10 tokens");
+      console.log(`Successfully burned ${burnAmount} tokens`);
       setBurnWallet("");
+      setBurnAmount("");
     } catch (err) {
       console.error("Failed to burn tokens:", err);
     }
@@ -589,14 +595,30 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                 Enter the wallet address from which tokens will be burned
               </p>
             </div>
+            <div>
+              <Label htmlFor="burn-amount">Amount to Burn</Label>
+              <Input
+                id="burn-amount"
+                type="number"
+                value={burnAmount}
+                onChange={(e) => setBurnAmount(e.target.value)}
+                placeholder="0.00"
+                min="0"
+                step="any"
+                className="mt-2"
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                Enter the amount of tokens to permanently burn
+              </p>
+            </div>
             <Button
               onClick={handleBurnTokens}
-              disabled={!burnWallet}
+              disabled={!burnWallet || !burnAmount || parseFloat(burnAmount) <= 0}
               variant="destructive"
               className="w-full"
             >
               <Flame className="h-4 w-4 mr-2" />
-              Burn Tokens
+              Burn {burnAmount || '0'} Tokens
             </Button>
           </div>
         </CardContent>
