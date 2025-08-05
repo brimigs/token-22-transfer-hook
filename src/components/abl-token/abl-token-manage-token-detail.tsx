@@ -1,18 +1,36 @@
-'use client'
+"use client";
 
-import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletButton } from '../solana/solana-provider'
-import { useParams } from 'next/navigation'
-import React from 'react'
-import { useAblTokenProgram, useGetToken } from './abl-token-data-access'
-import { PublicKey } from '@solana/web3.js'
-import { BN } from '@coral-xyz/anchor'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useSendTokens } from '../account/account-data-access'
-import { AlertCircle, Upload, Send, Coins, Settings, Wallet, Flame } from 'lucide-react'
+import { useWallet } from "@solana/wallet-adapter-react";
+import { WalletButton } from "../solana/solana-provider";
+import { useParams } from "next/navigation";
+import React from "react";
+import { useAblTokenProgram, useGetToken } from "./abl-token-data-access";
+import { PublicKey } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useSendTokens } from "../account/account-data-access";
+import {
+  AlertCircle,
+  Upload,
+  Send,
+  Coins,
+  Settings,
+  Wallet,
+  Flame,
+} from "lucide-react";
+import {
+  getAssociatedTokenAddressSync,
+  TOKEN_2022_PROGRAM_ID,
+} from "@solana/spl-token";
 
 interface TokenInfo {
   address: string;
@@ -32,9 +50,9 @@ interface TokenInfo {
 }
 
 function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
-  const { attachToExistingToken } = useAblTokenProgram()
+  const { attachToExistingToken } = useAblTokenProgram();
   const tokenInfo = useGetToken(new PublicKey(tokenAddress));
-  
+
   return (
     <Card>
       <CardHeader>
@@ -42,7 +60,9 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
           <Wallet className="h-5 w-5" />
           Token Information
         </CardTitle>
-        <CardDescription>Details about your token and its configuration</CardDescription>
+        <CardDescription>
+          Details about your token and its configuration
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {tokenInfo ? (
@@ -50,39 +70,59 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div>
-                  <Label className="text-muted-foreground text-sm">Token Address</Label>
+                  <Label className="text-muted-foreground text-sm">
+                    Token Address
+                  </Label>
                   <p className="font-mono text-sm break-all">{tokenAddress}</p>
                 </div>
                 <div>
                   <Label className="text-muted-foreground text-sm">Name</Label>
-                  <p className="font-medium">{tokenInfo.data?.name || 'N/A'}</p>
+                  <p className="font-medium">{tokenInfo.data?.name || "N/A"}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Symbol</Label>
-                  <p className="font-medium">{tokenInfo.data?.symbol || 'N/A'}</p>
+                  <Label className="text-muted-foreground text-sm">
+                    Symbol
+                  </Label>
+                  <p className="font-medium">
+                    {tokenInfo.data?.symbol || "N/A"}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Decimals</Label>
+                  <Label className="text-muted-foreground text-sm">
+                    Decimals
+                  </Label>
                   <p className="font-medium">{tokenInfo.data?.decimals}</p>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
                 <div>
-                  <Label className="text-muted-foreground text-sm">Supply</Label>
-                  <p className="font-medium">{tokenInfo.data?.supply?.toString() || '0'}</p>
+                  <Label className="text-muted-foreground text-sm">
+                    Supply
+                  </Label>
+                  <p className="font-medium">
+                    {tokenInfo.data?.supply?.toString() || "0"}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Mint Authority</Label>
-                  <p className="font-mono text-xs break-all">{tokenInfo.data?.mintAuthority?.toString() || 'None'}</p>
+                  <Label className="text-muted-foreground text-sm">
+                    Mint Authority
+                  </Label>
+                  <p className="font-mono text-xs break-all">
+                    {tokenInfo.data?.mintAuthority?.toString() || "None"}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Freeze Authority</Label>
-                  <p className="font-mono text-xs break-all">{tokenInfo.data?.freezeAuthority?.toString() || 'None'}</p>
+                  <Label className="text-muted-foreground text-sm">
+                    Freeze Authority
+                  </Label>
+                  <p className="font-mono text-xs break-all">
+                    {tokenInfo.data?.freezeAuthority?.toString() || "None"}
+                  </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="border-t pt-4">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Settings className="h-4 w-4" />
@@ -91,30 +131,50 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground text-sm">Mode</Label>
-                  <p className="font-medium">{tokenInfo.data?.mode || 'Not configured'}</p>
+                  <p className="font-medium">
+                    {tokenInfo.data?.mode || "Not configured"}
+                  </p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground text-sm">Threshold</Label>
-                  <p className="font-medium">{tokenInfo.data?.threshold?.toString() || 'N/A'}</p>
+                  <Label className="text-muted-foreground text-sm">
+                    Threshold
+                  </Label>
+                  <p className="font-medium">
+                    {tokenInfo.data?.threshold?.toString() || "N/A"}
+                  </p>
                 </div>
                 <div className="md:col-span-2">
-                  <Label className="text-muted-foreground text-sm">Transfer Hook Status</Label>
+                  <Label className="text-muted-foreground text-sm">
+                    Transfer Hook Status
+                  </Label>
                   {tokenInfo.data?.isTransferHookEnabled ? (
                     tokenInfo.data?.isTransferHookSet ? (
-                      <p className="text-green-600 font-medium mt-1">✓ Enabled and Set</p>
+                      <p className="text-green-600 font-medium mt-1">
+                        ✓ Enabled and Set
+                      </p>
                     ) : (
                       <div className="flex items-center gap-2 mt-1">
-                        <p className="text-yellow-600 font-medium">Enabled but not set</p>
-                        <Button 
-                          size="sm" 
-                          onClick={() => attachToExistingToken.mutateAsync({ mint: new PublicKey(tokenAddress) }).then()}
+                        <p className="text-yellow-600 font-medium">
+                          Enabled but not set
+                        </p>
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            attachToExistingToken
+                              .mutateAsync({
+                                mint: new PublicKey(tokenAddress),
+                              })
+                              .then()
+                          }
                         >
                           Set Hook
                         </Button>
                       </div>
                     )
                   ) : (
-                    <p className="text-muted-foreground font-medium mt-1">Not enabled</p>
+                    <p className="text-muted-foreground font-medium mt-1">
+                      Not enabled
+                    </p>
                   )}
                 </div>
               </div>
@@ -125,24 +185,31 @@ function TokenInfo({ tokenAddress }: { tokenAddress: string }) {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
-  const { publicKey } = useWallet()
-  const { changeMode, mintTo, burnTokens } = useAblTokenProgram()
-  const sendTokens = useSendTokens()
-  const [mode, setMode] = React.useState<'Allow' | 'Block' | 'Mixed'>(tokenInfo.mode as 'Allow' | 'Block' | 'Mixed')
-  const [threshold, setThreshold] = React.useState<string | undefined>(tokenInfo.threshold ?? undefined)
-  const [destinationWallet, setDestinationWallet] = React.useState('')
-  const [sendRecipient, setSendRecipient] = React.useState('')
-  const [sendAmount, setSendAmount] = React.useState('')
-  const [sendMemo, setSendMemo] = React.useState('')
-  const [bulkRecipients, setBulkRecipients] = React.useState<string[]>([])
-  const [bulkAmount, setBulkAmount] = React.useState('')
-  const [isSending, setIsSending] = React.useState(false)
-  const [sendProgress, setSendProgress] = React.useState({ current: 0, total: 0 })
-  const [burnWallet, setBurnWallet] = React.useState('')
+  const { publicKey } = useWallet();
+  const { changeMode, mintTo, burnTokens } = useAblTokenProgram();
+  const sendTokens = useSendTokens();
+  const [mode, setMode] = React.useState<"Allow" | "Block" | "Mixed">(
+    tokenInfo.mode as "Allow" | "Block" | "Mixed"
+  );
+  const [threshold, setThreshold] = React.useState<string | undefined>(
+    tokenInfo.threshold ?? undefined
+  );
+  const [destinationWallet, setDestinationWallet] = React.useState("");
+  const [sendRecipient, setSendRecipient] = React.useState("");
+  const [sendAmount, setSendAmount] = React.useState("");
+  const [sendMemo, setSendMemo] = React.useState("");
+  const [bulkRecipients, setBulkRecipients] = React.useState<string[]>([]);
+  const [bulkAmount, setBulkAmount] = React.useState("");
+  const [isSending, setIsSending] = React.useState(false);
+  const [sendProgress, setSendProgress] = React.useState({
+    current: 0,
+    total: 0,
+  });
+  const [burnWallet, setBurnWallet] = React.useState("");
 
   const handleApplyChanges = async () => {
     if (!publicKey || !tokenInfo) return;
@@ -154,11 +221,11 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
         mint: new PublicKey(tokenInfo.address),
       });
     } catch (err) {
-      console.error('Failed to apply changes:', err);
+      console.error("Failed to apply changes:", err);
     }
   };
 
-  const [mintAmount, setMintAmount] = React.useState('0')
+  const [mintAmount, setMintAmount] = React.useState("0");
 
   const handleMint = async () => {
     if (!publicKey || !tokenInfo) return;
@@ -169,9 +236,9 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
         amount: new BN(mintAmount),
         recipient: publicKey,
       });
-      console.log('Minted successfully');
+      console.log("Minted successfully");
     } catch (err) {
-      console.error('Failed to mint tokens:', err);
+      console.error("Failed to mint tokens:", err);
     }
   };
 
@@ -186,24 +253,26 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
         amount: amount,
         memo: sendMemo || undefined,
       });
-      console.log('Tokens sent successfully');
-      setSendRecipient('');
-      setSendAmount('');
-      setSendMemo('');
+      console.log("Tokens sent successfully");
+      setSendRecipient("");
+      setSendAmount("");
+      setSendMemo("");
     } catch (err) {
-      console.error('Failed to send tokens:', err);
+      console.error("Failed to send tokens:", err);
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       const text = e.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
-      
+      const lines = text.split("\n").filter((line) => line.trim());
+
       const validWallets: string[] = [];
       for (const line of lines) {
         const wallet = line.trim();
@@ -214,7 +283,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
           console.warn(`Invalid wallet address: ${wallet}`);
         }
       }
-      
+
       setBulkRecipients(validWallets);
       console.log(`Loaded ${validWallets.length} valid wallet addresses`);
     };
@@ -222,7 +291,8 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
   };
 
   const handleBulkSend = async () => {
-    if (!publicKey || !tokenInfo || bulkRecipients.length === 0 || !bulkAmount) return;
+    if (!publicKey || !tokenInfo || bulkRecipients.length === 0 || !bulkAmount)
+      return;
 
     setIsSending(true);
     setSendProgress({ current: 0, total: bulkRecipients.length });
@@ -244,10 +314,12 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
       }
     }
 
-    console.log(`Successfully sent tokens to ${successCount} out of ${bulkRecipients.length} wallets`);
+    console.log(
+      `Successfully sent tokens to ${successCount} out of ${bulkRecipients.length} wallets`
+    );
     setIsSending(false);
     setBulkRecipients([]);
-    setBulkAmount('');
+    setBulkAmount("");
     setSendProgress({ current: 0, total: 0 });
   };
 
@@ -257,15 +329,23 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
     try {
       // Burn exactly 10 tokens
       const burnAmount = 10 * Math.pow(10, tokenInfo.decimals);
+      const ata = getAssociatedTokenAddressSync(
+        new PublicKey(tokenInfo.address),
+        new PublicKey(burnWallet),
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      );
+
       await burnTokens.mutateAsync({
         mint: new PublicKey(tokenInfo.address),
-        owner: new PublicKey(burnWallet),
+        owner: new PublicKey(publicKey),
         amount: new BN(burnAmount),
+        ata,
       });
-      console.log('Successfully burned 10 tokens');
-      setBurnWallet('');
+      console.log("Successfully burned 10 tokens");
+      setBurnWallet("");
     } catch (err) {
-      console.error('Failed to burn tokens:', err);
+      console.error("Failed to burn tokens:", err);
     }
   };
 
@@ -277,7 +357,9 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
             <Coins className="h-5 w-5" />
             Mint Tokens
           </CardTitle>
-          <CardDescription>Create new tokens and add them to circulation</CardDescription>
+          <CardDescription>
+            Create new tokens and add them to circulation
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -286,7 +368,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
               id="mint-destination"
               type="text"
               value={destinationWallet}
-              onChange={e => setDestinationWallet(e.target.value)}
+              onChange={(e) => setDestinationWallet(e.target.value)}
               placeholder="Enter destination wallet address"
               className="mt-2"
             />
@@ -298,7 +380,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                 id="mint-amount"
                 type="number"
                 value={mintAmount}
-                onChange={e => setMintAmount(e.target.value)}
+                onChange={(e) => setMintAmount(e.target.value)}
                 min="0"
                 placeholder="0.00"
               />
@@ -333,7 +415,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                     id="send-recipient"
                     type="text"
                     value={sendRecipient}
-                    onChange={e => setSendRecipient(e.target.value)}
+                    onChange={(e) => setSendRecipient(e.target.value)}
                     placeholder="Enter recipient wallet address"
                     className="mt-2"
                   />
@@ -344,12 +426,13 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                     id="send-memo"
                     type="text"
                     value={sendMemo}
-                    onChange={e => setSendMemo(e.target.value)}
+                    onChange={(e) => setSendMemo(e.target.value)}
                     placeholder="Add a memo to this transaction"
                     className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    This memo will be recorded on the blockchain with your transaction
+                    This memo will be recorded on the blockchain with your
+                    transaction
                   </p>
                 </div>
                 <div>
@@ -359,13 +442,17 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                       id="send-amount"
                       type="number"
                       value={sendAmount}
-                      onChange={e => setSendAmount(e.target.value)}
+                      onChange={(e) => setSendAmount(e.target.value)}
                       min="0"
                       placeholder="0.00"
                     />
-                    <Button 
+                    <Button
                       onClick={handleSendTokens}
-                      disabled={!sendRecipient || !sendAmount || parseFloat(sendAmount) <= 0}
+                      disabled={
+                        !sendRecipient ||
+                        !sendAmount ||
+                        parseFloat(sendAmount) <= 0
+                      }
                       className="shrink-0"
                     >
                       <Send className="h-4 w-4 mr-2" />
@@ -399,13 +486,14 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                       <div className="flex items-center gap-2 mt-3">
                         <div className="h-2 w-2 bg-green-500 rounded-full"></div>
                         <p className="text-sm text-green-600">
-                          {bulkRecipients.length} valid wallet{bulkRecipients.length !== 1 ? 's' : ''} loaded
+                          {bulkRecipients.length} valid wallet
+                          {bulkRecipients.length !== 1 ? "s" : ""} loaded
                         </p>
                       </div>
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="bulk-amount">Amount per Wallet</Label>
                   <div className="flex gap-3 mt-2">
@@ -413,13 +501,18 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                       id="bulk-amount"
                       type="number"
                       value={bulkAmount}
-                      onChange={e => setBulkAmount(e.target.value)}
+                      onChange={(e) => setBulkAmount(e.target.value)}
                       min="0"
                       placeholder="0.00"
                     />
-                    <Button 
+                    <Button
                       onClick={handleBulkSend}
-                      disabled={bulkRecipients.length === 0 || !bulkAmount || parseFloat(bulkAmount) <= 0 || isSending}
+                      disabled={
+                        bulkRecipients.length === 0 ||
+                        !bulkAmount ||
+                        parseFloat(bulkAmount) <= 0 ||
+                        isSending
+                      }
                       className="shrink-0"
                     >
                       {isSending ? (
@@ -436,17 +529,21 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                     </Button>
                   </div>
                 </div>
-                
+
                 {isSending && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{sendProgress.current} / {sendProgress.total}</span>
+                      <span className="font-medium">
+                        {sendProgress.current} / {sendProgress.total}
+                      </span>
                     </div>
                     <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-                      <div 
+                      <div
                         className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
-                        style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}
+                        style={{
+                          width: `${(sendProgress.current / sendProgress.total) * 100}%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -463,14 +560,19 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
             <Flame className="h-5 w-5" />
             Burn Tokens
           </CardTitle>
-          <CardDescription>Permanently remove tokens from circulation</CardDescription>
+          <CardDescription>
+            Permanently remove tokens from circulation
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <p className="text-sm text-destructive font-medium mb-1">⚠️ Warning</p>
+              <p className="text-sm text-destructive font-medium mb-1">
+                ⚠️ Warning
+              </p>
               <p className="text-sm text-muted-foreground">
-                This action will permanently burn tokens from the specified wallet. This action cannot be undone.
+                This action will permanently burn tokens from the specified
+                wallet. This action cannot be undone.
               </p>
             </div>
             <div>
@@ -479,7 +581,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                 id="burn-wallet"
                 type="text"
                 value={burnWallet}
-                onChange={e => setBurnWallet(e.target.value)}
+                onChange={(e) => setBurnWallet(e.target.value)}
                 placeholder="Enter wallet address to burn from"
                 className="mt-2"
               />
@@ -487,7 +589,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
                 Enter the wallet address from which tokens will be burned
               </p>
             </div>
-            <Button 
+            <Button
               onClick={handleBurnTokens}
               disabled={!burnWallet}
               variant="destructive"
@@ -507,62 +609,84 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
               <Settings className="h-5 w-5" />
               Transfer Settings
             </CardTitle>
-            <CardDescription>Configure how transfers are handled for this token</CardDescription>
+            <CardDescription>
+              Configure how transfers are handled for this token
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label className="text-base font-medium mb-3 block">Transfer Mode</Label>
+              <Label className="text-base font-medium mb-3 block">
+                Transfer Mode
+              </Label>
               <div className="grid grid-cols-3 gap-3">
-                <label className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === 'Allow' ? 'border-primary bg-primary/5' : 'border-muted'}`}>
+                <label
+                  className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === "Allow" ? "border-primary bg-primary/5" : "border-muted"}`}
+                >
                   <input
                     type="radio"
                     className="sr-only"
-                    checked={mode === 'Allow'}
-                    onChange={() => {setMode('Allow'); setThreshold(tokenInfo.threshold ?? undefined);}}
+                    checked={mode === "Allow"}
+                    onChange={() => {
+                      setMode("Allow");
+                      setThreshold(tokenInfo.threshold ?? undefined);
+                    }}
                     name="mode"
                   />
                   <div className="text-center">
                     <p className="font-medium">Allow</p>
-                    <p className="text-xs text-muted-foreground mt-1">All transfers allowed</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      All transfers allowed
+                    </p>
                   </div>
                 </label>
-                <label className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === 'Block' ? 'border-primary bg-primary/5' : 'border-muted'}`}>
+                <label
+                  className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === "Block" ? "border-primary bg-primary/5" : "border-muted"}`}
+                >
                   <input
                     type="radio"
                     className="sr-only"
-                    checked={mode === 'Block'}
-                    onChange={() => {setMode('Block'); setThreshold(tokenInfo.threshold ?? undefined);}}
+                    checked={mode === "Block"}
+                    onChange={() => {
+                      setMode("Block");
+                      setThreshold(tokenInfo.threshold ?? undefined);
+                    }}
                     name="mode"
                   />
                   <div className="text-center">
                     <p className="font-medium">Block</p>
-                    <p className="text-xs text-muted-foreground mt-1">All transfers blocked</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      All transfers blocked
+                    </p>
                   </div>
                 </label>
-                <label className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === 'Mixed' ? 'border-primary bg-primary/5' : 'border-muted'}`}>
+                <label
+                  className={`relative flex cursor-pointer items-center justify-center rounded-lg border p-4 ${mode === "Mixed" ? "border-primary bg-primary/5" : "border-muted"}`}
+                >
                   <input
                     type="radio"
                     className="sr-only"
-                    checked={mode === 'Mixed'}
-                    onChange={() => setMode('Mixed')}
+                    checked={mode === "Mixed"}
+                    onChange={() => setMode("Mixed")}
                     name="mode"
                   />
                   <div className="text-center">
                     <p className="font-medium">Mixed</p>
-                    <p className="text-xs text-muted-foreground mt-1">Threshold-based</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Threshold-based
+                    </p>
                   </div>
                 </label>
               </div>
             </div>
 
-            {mode === 'Mixed' && (
+            {mode === "Mixed" && (
               <div>
                 <Label htmlFor="threshold">Threshold Amount</Label>
                 <Input
                   id="threshold"
                   type="number"
                   value={threshold}
-                  onChange={e => setThreshold(e.target.value)}
+                  onChange={(e) => setThreshold(e.target.value)}
                   min="0"
                   placeholder="Enter threshold amount"
                   className="mt-2"
@@ -573,9 +697,13 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
               </div>
             )}
 
-            <Button 
+            <Button
               onClick={handleApplyChanges}
-              disabled={mode === tokenInfo.mode && (threshold === tokenInfo.threshold || (threshold === undefined && tokenInfo.threshold === null))}
+              disabled={
+                mode === tokenInfo.mode &&
+                (threshold === tokenInfo.threshold ||
+                  (threshold === undefined && tokenInfo.threshold === null))
+              }
               className="w-full"
             >
               Apply Changes
@@ -584,19 +712,19 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
         </Card>
       )}
     </div>
-  )
+  );
 }
 
 export default function ManageTokenDetail() {
-  const { publicKey } = useWallet()
-  const params = useParams()
-  const tokenAddress = params?.address as string
+  const { publicKey } = useWallet();
+  const params = useParams();
+  const tokenAddress = params?.address as string;
   const tokenQuery = useGetToken(new PublicKey(tokenAddress));
 
   // Save token address to localStorage when accessed
   React.useEffect(() => {
-    if (tokenAddress && typeof window !== 'undefined') {
-      localStorage.setItem('lastTokenAddress', tokenAddress);
+    if (tokenAddress && typeof window !== "undefined") {
+      localStorage.setItem("lastTokenAddress", tokenAddress);
     }
   }, [tokenAddress]);
 
@@ -616,7 +744,7 @@ export default function ManageTokenDetail() {
           <WalletButton />
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -624,16 +752,19 @@ export default function ManageTokenDetail() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Token Management</h1>
         <p className="text-muted-foreground">
-          Manage your token settings, mint new tokens, and send tokens to wallets
+          Manage your token settings, mint new tokens, and send tokens to
+          wallets
         </p>
       </div>
-      
+
       {tokenQuery?.isLoading ? (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
             <div className="text-center space-y-3">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
-              <p className="text-muted-foreground">Loading token information...</p>
+              <p className="text-muted-foreground">
+                Loading token information...
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -651,10 +782,10 @@ export default function ManageTokenDetail() {
         </Card>
       ) : (
         <div className="grid gap-6">
-          {tokenInfo && <TokenManagement tokenInfo={tokenInfo}/>}
+          {tokenInfo && <TokenManagement tokenInfo={tokenInfo} />}
           <TokenInfo tokenAddress={tokenAddress} />
         </div>
       )}
     </div>
-  )
+  );
 }
