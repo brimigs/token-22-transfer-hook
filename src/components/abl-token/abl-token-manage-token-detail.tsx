@@ -308,16 +308,18 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
         amount: amount,
       }));
 
-      // Send all transfers in a single transaction
-      await bulkSendTokens.mutateAsync({
+      // Send individual transactions for each recipient
+      const signatures = await bulkSendTokens.mutateAsync({
         mint: new PublicKey(tokenInfo.address),
         recipients: recipients,
+        onProgress: (current, total) => {
+          setSendProgress({ current, total });
+        },
       });
 
       console.log(
-        `Successfully sent tokens to all ${bulkRecipients.length} wallets in a single transaction`
+        `Successfully sent ${signatures.length} individual transactions to ${bulkRecipients.length} wallets`
       );
-      setSendProgress({ current: bulkRecipients.length, total: bulkRecipients.length });
     } catch (err) {
       console.error('Failed to send bulk transfers:', err);
     }

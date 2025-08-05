@@ -188,9 +188,10 @@ export function useBulkSendTokens() {
     mutationFn: async (args: {
       mint: PublicKey,
       recipients: { destination: PublicKey, amount: number }[],
+      onProgress?: (current: number, total: number) => void,
     }) => {
       if (!publicKey) throw new Error('No public key found');
-      const { mint, recipients } = args;
+      const { mint, recipients, onProgress } = args;
       
       const mintInfo = await getMint(connection, mint, 'confirmed', TOKEN_2022_PROGRAM_ID);
       const transferHook = getTransferHook(mintInfo);
@@ -201,53 +202,78 @@ export function useBulkSendTokens() {
       if (!validateStateAccount) throw new Error('validate-state-account not found');
       
       const ataSource = getAssociatedTokenAddressSync(mint, publicKey, true, TOKEN_2022_PROGRAM_ID);
-      const transaction = new Transaction();
+      const signatures: string[] = [];
+      const total = recipients.length;
       
-      // Add all transfer instructions to a single transaction
-      for (const { destination, amount } of recipients) {
-        const ataDestination = getAssociatedTokenAddressSync(mint, destination, true, TOKEN_2022_PROGRAM_ID);
+      // Send individual transactions for each recipient
+      for (let i = 0; i < recipients.length; i++) {
+        const { destination, amount } = recipients[i];
         
-        // Create ATA if it doesn't exist
-        const createATAInstruction = createAssociatedTokenAccountIdempotentInstruction(
-          publicKey, 
-          ataDestination, 
-          destination, 
-          mint, 
-          TOKEN_2022_PROGRAM_ID
-        );
-        
-        // Create transfer instruction
-        const bi = BigInt(amount);
-        const transferInstruction = await createTransferCheckedInstruction(
-          ataSource, 
-          mint, 
-          ataDestination, 
-          publicKey, 
-          bi, 
-          mintInfo.decimals, 
-          undefined, 
-          TOKEN_2022_PROGRAM_ID
-        );
-        
-        // Add transfer hook accounts
-        const seeds = [Buffer.from('ab_wallet'), destination.toBuffer()];
-        const abWallet = PublicKey.findProgramAddressSync(seeds, transferHook.programId)[0];
-        
-        transferInstruction.keys.push({ pubkey: abWallet, isSigner: false, isWritable: false });
-        transferInstruction.keys.push({ pubkey: transferHook.programId, isSigner: false, isWritable: false });
-        transferInstruction.keys.push({ pubkey: extraMetas, isSigner: false, isWritable: false });
-        
-        transaction.add(createATAInstruction, transferInstruction);
+        try {
+          const transaction = new Transaction();
+          const ataDestination = getAssociatedTokenAddressSync(mint, destination, true, TOKEN_2022_PROGRAM_ID);
+          
+          // Create ATA if it doesn't exist
+          const createATAInstruction = createAssociatedTokenAccountIdempotentInstruction(
+            publicKey, 
+            ataDestination, 
+            destination, 
+            mint, 
+            TOKEN_2022_PROGRAM_ID
+          );
+          
+          // Create transfer instruction
+          const bi = BigInt(amount);
+          const transferInstruction = await createTransferCheckedInstruction(
+            ataSource, 
+            mint, 
+            ataDestination, 
+            publicKey, 
+            bi, 
+            mintInfo.decimals, 
+            undefined, 
+            TOKEN_2022_PROGRAM_ID
+          );
+          
+          // Add transfer hook accounts
+          const seeds = [Buffer.from('ab_wallet'), destination.toBuffer()];
+          const abWallet = PublicKey.findProgramAddressSync(seeds, transferHook.programId)[0];
+          
+          transferInstruction.keys.push({ pubkey: abWallet, isSigner: false, isWritable: false });
+          transferInstruction.keys.push({ pubkey: transferHook.programId, isSigner: false, isWritable: false });
+          transferInstruction.keys.push({ pubkey: extraMetas, isSigner: false, isWritable: false });
+          
+          transaction.add(createATAInstruction, transferInstruction);
+          transaction.feePayer = provider.wallet.publicKey;
+          transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+          
+          const signedTx = await provider.wallet.signTransaction(transaction);
+          const signature = await connection.sendRawTransaction(signedTx.serialize());
+          signatures.push(signature);
+          
+          // Update progress
+          if (onProgress) {
+            onProgress(i + 1, total);
+          }
+          
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`Failed to send to ${destination.toString()}:`, error);
+          // Continue with next recipient even if one fails
+        }
       }
       
-      transaction.feePayer = provider.wallet.publicKey;
-      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-      
-      const signedTx = await provider.wallet.signTransaction(transaction);
-      return connection.sendRawTransaction(signedTx.serialize());
+      return signatures;
     },
-    onSuccess: (signature) => {
-      transactionToast(signature)
+    onSuccess: (signatures) => {
+      if (signatures.length > 0) {
+        console.log(`Successfully sent ${signatures.length} transactions`);
+        // Show toast for the first signature as a representative
+        if (signatures[0]) {
+          transactionToast(signatures[0]);
+        }
+      }
     },
     onError: (error) => { transactionErrorToast(error, connection) },
   })
