@@ -328,7 +328,7 @@ function TokenManagement({ tokenInfo }: { tokenInfo: TokenInfo }) {
 
     try {
       // Burn exactly 10 tokens
-      const burnAmount = 10 * Math.pow(10, tokenInfo.decimals);
+      const burnAmount = 1 * Math.pow(10, tokenInfo.decimals);
       const ata = getAssociatedTokenAddressSync(
         new PublicKey(tokenInfo.address),
         new PublicKey(burnWallet),
