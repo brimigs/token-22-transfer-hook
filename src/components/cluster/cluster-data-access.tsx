@@ -25,7 +25,7 @@ export enum ClusterNetwork {
 export const defaultClusters: SolanaCluster[] = [
   {
     name: 'devnet',
-    endpoint: clusterApiUrl('devnet'),
+    endpoint: 'https://api.devnet.solana.com/c45c9d34-b9df-4c3c-b376-a4f001be67a0',
     network: ClusterNetwork.Devnet,
   },
   { name: 'local', endpoint: 'http://localhost:8899' },
